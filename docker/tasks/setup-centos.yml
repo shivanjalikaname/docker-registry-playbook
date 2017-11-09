@@ -1,0 +1,41 @@
+---
+- name: Ensure old versions of Docker are not installed.
+  package:
+    name: '{{ item }}'
+    state: absent
+  with_items:
+    - docker
+    - docker-common
+    - docker-engine
+
+- name: Add Docker GPG key.
+  rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    state: present
+
+- name: Add Docker repository.
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    owner: root
+    group: root
+    mode: 0644
+
+- file:
+    path: /certs
+    state: directory
+    mode: 0755
+- name: ssl key generate 
+  command: openssl req -subj "/C=US/ST=Ohio/L=Columbus/O=Acme Company/OU=Acme/CN={{ FQDN_OF_CENTOS }}" -newkey rsa:4096 -nodes -sha256 -keyout /certs/ca.key -out /certs/ca.crt
+#- name: Generate the self-sighned keys
+#  #command: openssl req -newkey rsa:4096 -nodes -sha256 -keyout /certs/ca.key -x509 -days 365 -out /certs/ca.crt
+#  expect:
+#    command:  openssl req -newkey rsa:4096 -nodes -sha256 -keyout /certs/ca.key -x509 -days 365 -out /certs/ca.crt
+#    responses:
+#      (?)Country Name (2 letter code) [XX]: "IN"
+
+#- name: Generate an OpenSSL CSR.
+#  openssl_csr:
+#    path: "/certs/{{ FQDN_OF_CENTOS }}.csr"
+#    privatekey_path: "/certs/{{ FQDN_OF_CENTOS }}.pem"
+#    common_name: "{{ FQDN_OF_CENTOS }}"

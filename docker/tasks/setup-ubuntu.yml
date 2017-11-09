@@ -1,0 +1,37 @@
+---
+#- name: Install the required dependencies for Ubuntu
+#  remote_user: devops
+#  apt: name={{item}} state=installed
+#  with_items:
+
+- name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
+  apt:
+    update_cache: yes
+- name: ensure repository key is installed
+  apt_key:
+    id: "58118E89F3A912897C070ADBF76221572C52609D"
+    keyserver: "hkp://p80.pool.sks-keyservers.net:80"
+    state: present
+
+- name: ensure docker registry is available
+# For Ubuntu 14.04 LTS, use this repository:
+# apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present
+      # For Ubuntu 16.04 LTS, use this repo instead:
+  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-xenial main' state=present
+
+- name: ensure docker and dependencies are installed
+  apt: name=docker-engine update_cache=yes
+
+- service: name=docker state=restarted
+- file:
+    path: /certs
+    state: directory
+    mode: 0755
+
+- name: ssl key generate
+  command: openssl req -subj "/C=US/ST=Ohio/L=Columbus/O=Acme Company/OU=Acme/CN={{ FQDN_OF_UBUNTU }}" -newkey rsa:4096 -nodes -sha256 -keyout /certs/ca.key -out /certs/ca.crt
+#- name: Generate an OpenSSL CSR.
+#  openssl_csr:
+#    path: "/certs/{{ FQDN_OF_CENTOS }}.csr"
+#    privatekey_path: "/certs/{{ FQDN_OF_CENTOS }}.pem"
+#    common_name: "{{ FQDN_OF_UBUNTU }}"
